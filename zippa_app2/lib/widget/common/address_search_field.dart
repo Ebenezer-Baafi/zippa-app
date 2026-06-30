@@ -20,7 +20,7 @@ class AddressSearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return GooglePlaceAutoCompleteTextField(
       textEditingController: TextEditingController(),
-      googleAPIKey: "AIzaSyAyFDtvYcAX-n8bvMfGGFK8nDWHYbnVaOc",
+      googleAPIKey: "AIzaSyBZzeMTeVLRFPXPaMzaCQKHhtFFOhrj2-M",
       inputDecoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: iconColor),

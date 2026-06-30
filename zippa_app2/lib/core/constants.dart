@@ -1,6 +1,6 @@
 class AppConstants {
   // API Base URL
-  static const String baseUrl = 'https://zippa-backend.onrender.com/api/v1';
+  static const String baseUrl = 'https://zippa-backend-z90m.onrender.com';
 
   // Auth endpoints
   static const String register = '/auth/register/';
