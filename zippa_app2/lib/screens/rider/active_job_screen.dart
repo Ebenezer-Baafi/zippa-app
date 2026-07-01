@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zippa_app/providers/job_provider.dart';
 import 'package:zippa_app/screens/rider/rider_home_screen.dart';
-import 'package:zippa_app/widgets/common/custom_button.dart';
+import 'package:zippa_app/widget/common/custom_button.dart';
 
 class ActiveJobScreen extends StatefulWidget {
   final String jobId;
@@ -92,7 +92,7 @@ class _ActiveJobScreenState extends State<ActiveJobScreen> {
                           borderRadius: BorderRadius.circular(12),
                           boxShadow   : [
                             BoxShadow(
-                              color    : Colors.black.withOpacity(0.05),
+                              color    : Colors.black.withValues(alpha: 0.05),
                               blurRadius: 8, offset: const Offset(0, 2)),
                           ],
                         ),

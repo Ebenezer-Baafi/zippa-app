@@ -118,7 +118,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                       padding   : const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color       : Colors.white.withOpacity(0.1),
+                        color       : Colors.white.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -146,7 +146,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                           ]),
                           Switch(
                             value          : rider.profile?.isAvailable ?? false,
-                            activeColor    : const Color(0xFFE94560),
+                            activeThumbColor    : const Color(0xFFE94560),
                             onChanged      : (val) =>
                                 rider.toggleAvailability(val),
                           ),
@@ -247,7 +247,7 @@ class _AvailableJobCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow   : [
           BoxShadow(
-            color    : Colors.black.withOpacity(0.05),
+            color    : Colors.black.withValues(alpha: 0.05),
             blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
@@ -261,7 +261,7 @@ class _AvailableJobCard extends StatelessWidget {
                 padding   : const EdgeInsets.symmetric(
                     horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color       : const Color(0xFFE94560).withOpacity(0.1),
+                  color       : const Color(0xFFE94560).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(job.packageType.toUpperCase(),
@@ -344,7 +344,7 @@ class _StatCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow   : [
             BoxShadow(
-              color    : Colors.black.withOpacity(0.05),
+              color    : Colors.black.withValues(alpha: 0.05),
               blurRadius: 8, offset: const Offset(0, 2)),
           ],
         ),
