@@ -9,6 +9,7 @@ import 'package:zippa_app/models/job.dart';
 import 'package:zippa_app/core/api_client.dart';
 import 'package:zippa_app/core/constants.dart';
 import 'package:zippa_app/screens/shared/notifications_screen.dart';
+import 'package:zippa_app/screens/customer/browse_riders_screen.dart';
 
 class CustomerHomeScreen extends StatefulWidget {
   const CustomerHomeScreen({super.key});
@@ -112,6 +113,7 @@ class _NotificationBellState extends State<_NotificationBell> {
       final res = await ApiClient.dio.get(
         '${AppConstants.notifications}unread/',
       );
+      if (!mounted) return;
       setState(() => _unread = res.data['unread_count'] ?? 0);
     } catch (_) {}
   }
@@ -199,25 +201,66 @@ class _HomeTab extends StatelessWidget {
                   style: TextStyle(color: Colors.white60, fontSize: 13),
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CreateJobScreen()),
-                  ),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Create Delivery'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE94560),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                Row(
+                  children: [
+                    // Post a Delivery (bidding path)
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CreateJobScreen(),
+                          ),
+                        ),
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text(
+                          'Post a Delivery',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE94560),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 12,
+                          ),
+                          minimumSize: Size.zero,
+                        ),
+                      ),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
+                    const SizedBox(width: 10),
+                    // Browse Riders (direct selection path)
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const BrowseRidersScreen(),
+                          ),
+                        ),
+                        icon: const Icon(Icons.people_outline, size: 16),
+                        label: const Text(
+                          'Browse Riders',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF1A1A2E),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 12,
+                          ),
+                          minimumSize: Size.zero,
+                        ),
+                      ),
                     ),
-                    minimumSize: Size.zero,
-                  ),
+                  ],
                 ),
               ],
             ),

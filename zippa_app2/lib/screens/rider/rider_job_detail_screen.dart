@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zippa_app/models/job.dart';
 import 'package:zippa_app/providers/job_provider.dart';
+import 'package:zippa_app/providers/rider_provider.dart';
 import 'package:zippa_app/screens/rider/active_job_screen.dart';
 import 'package:zippa_app/screens/shared/negotiations_screen.dart';
 import 'package:zippa_app/widget/common/custom_button.dart';
@@ -23,6 +24,7 @@ class _RiderJobDetailScreenState extends State<RiderJobDetailScreen> {
     final ok = await jobs.updateJobStatus(widget.job.id, 'accepted');
     if (!mounted) return;
     setState(() => _accepting = false);
+
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -49,6 +51,9 @@ class _RiderJobDetailScreenState extends State<RiderJobDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final job = widget.job;
+    final rider = context.watch<RiderProvider>();
+    final notApproved = rider.profile?.isApproved != true;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(title: const Text('Job Details')),
@@ -94,6 +99,51 @@ class _RiderJobDetailScreenState extends State<RiderJobDetailScreen> {
               ),
             ),
             const SizedBox(height: 20),
+
+            // ── Admin approval warning ───────────────────────────────
+            if (notApproved) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.orange.shade700,
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Account Pending Approval',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Your rider account has not been approved by an '
+                            'admin yet. You cannot accept jobs until an admin '
+                            'verifies your profile.',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // Package info
             _InfoCard(
@@ -141,7 +191,7 @@ class _RiderJobDetailScreenState extends State<RiderJobDetailScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Negotiate button
+            // Negotiate button (always available)
             CustomButton(
               label: '🤝 Negotiate Price',
               onPressed: () => Navigator.push(
@@ -155,13 +205,43 @@ class _RiderJobDetailScreenState extends State<RiderJobDetailScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Accept button
-            CustomButton(
-              label: 'Accept Job — GHS ${job.estimatedFare ?? ""}',
-              onPressed: _acceptJob,
-              isLoading: _accepting,
-              color: const Color(0xFF1A1A2E),
-            ),
+            // Accept button OR disabled state
+            if (notApproved)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade400),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.lock_outline,
+                      color: Colors.grey.shade700,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Accept unavailable — pending approval',
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              CustomButton(
+                label: 'Accept Job — GHS ${job.estimatedFare ?? ""}',
+                onPressed: _acceptJob,
+                isLoading: _accepting,
+                color: const Color(0xFF1A1A2E),
+              ),
             const SizedBox(height: 24),
           ],
         ),
@@ -186,7 +266,7 @@ class _InfoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

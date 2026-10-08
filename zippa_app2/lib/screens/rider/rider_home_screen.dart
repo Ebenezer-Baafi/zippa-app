@@ -9,6 +9,7 @@ import 'package:zippa_app/core/api_client.dart';
 import 'package:zippa_app/core/constants.dart';
 import 'package:zippa_app/screens/shared/notifications_screen.dart';
 import 'package:zippa_app/screens/rider/rider_job_detail_screen.dart';
+import 'package:zippa_app/screens/rider/rider_profile_setup_screen.dart';
 
 class RiderHomeScreen extends StatefulWidget {
   const RiderHomeScreen({super.key});
@@ -18,13 +19,27 @@ class RiderHomeScreen extends StatefulWidget {
 }
 
 class _RiderHomeScreenState extends State<RiderHomeScreen> {
-  int _currentIndex = 0; // add this
+  int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RiderProvider>().fetchProfile();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final riderProvider = context.read<RiderProvider>();
+      await riderProvider.fetchProfile();
+
+      if (!mounted) return;
+
+      // Defensive guard: if no profile, redirect to setup
+      if (riderProvider.profile == null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const RiderProfileSetupScreen()),
+        );
+        return;
+      }
+
+      if (!mounted) return;
       context.read<JobProvider>().fetchJobs();
     });
   }
@@ -45,7 +60,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       appBar: AppBar(
         title: Text(_currentIndex == 0 ? 'Zippa Rider' : 'My Deliveries'),
         actions: [
-          _NotificationBell(),
+          const _NotificationBell(),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -62,7 +77,6 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          // Tab 1 — Available Jobs
           _HomeTab(
             auth: auth,
             rider: rider,
@@ -70,8 +84,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             pendingJobs: pendingJobs,
             onRefresh: _refresh,
           ),
-          // Tab 2 — My Deliveries
-          _MyDeliveriesTab(jobs: jobs),
+          const _MyDeliveriesTab(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -114,6 +127,7 @@ class _NotificationBellState extends State<_NotificationBell> {
       final res = await ApiClient.dio.get(
         '${AppConstants.notifications}unread/',
       );
+      if (!mounted) return;
       setState(() => _unread = res.data['unread_count'] ?? 0);
     } catch (_) {}
   }
@@ -164,6 +178,7 @@ class _NotificationBellState extends State<_NotificationBell> {
 class _AvailableJobCard extends StatelessWidget {
   final DeliveryJob job;
   final VoidCallback onAccept;
+
   const _AvailableJobCard({required this.job, required this.onAccept});
 
   @override
@@ -181,7 +196,7 @@ class _AvailableJobCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -199,7 +214,7 @@ class _AvailableJobCard extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE94560).withOpacity(0.1),
+                    color: const Color(0xFFE94560).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -413,7 +428,7 @@ class _HomeTab extends StatelessWidget {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -454,6 +469,32 @@ class _HomeTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
+
+            // Approval banner
+            if (rider.profile?.isApproved != true)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange.shade700),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Your account is pending admin approval. '
+                        'You cannot accept jobs yet.',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             // Stats row
             Row(
@@ -538,9 +579,21 @@ class _HomeTab extends StatelessWidget {
 }
 
 // ── My Deliveries Tab ─────────────────────────────────────────────────────────
-class _MyDeliveriesTab extends StatelessWidget {
-  final JobProvider jobs;
-  const _MyDeliveriesTab({required this.jobs});
+class _MyDeliveriesTab extends StatefulWidget {
+  const _MyDeliveriesTab();
+
+  @override
+  State<_MyDeliveriesTab> createState() => _MyDeliveriesTabState();
+}
+
+class _MyDeliveriesTabState extends State<_MyDeliveriesTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<JobProvider>().fetchMyDeliveries();
+    });
+  }
 
   Color _statusColor(String status) {
     switch (status) {
@@ -559,10 +612,10 @@ class _MyDeliveriesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // filter jobs where rider is assigned
-    final myJobs = jobs.jobs.where((j) => j.status != 'pending').toList();
+    final jobs = context.watch<JobProvider>();
+    final myJobs = jobs.jobs; // already filtered by backend (scope=my)
 
-    return jobs.isLoading
+    return jobs.isLoading && myJobs.isEmpty
         ? const Center(child: CircularProgressIndicator())
         : myJobs.isEmpty
         ? const Center(
@@ -581,7 +634,7 @@ class _MyDeliveriesTab extends StatelessWidget {
             ),
           )
         : RefreshIndicator(
-            onRefresh: () => context.read<JobProvider>().fetchJobs(),
+            onRefresh: () => context.read<JobProvider>().fetchMyDeliveries(),
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: myJobs.length,
@@ -595,7 +648,7 @@ class _MyDeliveriesTab extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -621,7 +674,9 @@ class _MyDeliveriesTab extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: _statusColor(job.status).withOpacity(0.1),
+                              color: _statusColor(
+                                job.status,
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(

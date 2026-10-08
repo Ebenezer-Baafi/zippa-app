@@ -6,7 +6,10 @@ import 'package:zippa_app/widget/common/custom_text_field.dart';
 import 'package:zippa_app/widget/common/address_search_field.dart';
 
 class CreateJobScreen extends StatefulWidget {
-  const CreateJobScreen({super.key});
+  final String? riderId;
+  final String? riderName;
+
+  const CreateJobScreen({super.key, this.riderId, this.riderName});
 
   @override
   State<CreateJobScreen> createState() => _CreateJobScreenState();
@@ -111,12 +114,18 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
       'dropoff_lat': double.parse(_dropoffLat!.toStringAsFixed(6)),
       'dropoff_lng': double.parse(_dropoffLng!.toStringAsFixed(6)),
       'estimated_fare': fare,
+      if (widget.riderId != null) 'rider_id': widget.riderId,
     });
+
     if (!mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Delivery job created successfully!'),
+        SnackBar(
+          content: Text(
+            widget.riderId != null
+                ? 'Request sent to ${widget.riderName ?? "rider"}!'
+                : 'Delivery job created successfully!',
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -144,6 +153,50 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Selected rider banner (only when riderId is present) ──
+              if (widget.riderId != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A2E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.person_pin_circle,
+                        color: Color(0xFFE94560),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Requesting a specific rider',
+                              style: TextStyle(
+                                color: Colors.white60,
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              widget.riderName ?? 'Selected rider',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               // Package type selector
               const Text(
                 'Package Type',
@@ -302,7 +355,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -420,7 +473,9 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               ),
               const SizedBox(height: 12),
               CustomButton(
-                label: 'Create Delivery Job',
+                label: widget.riderId != null
+                    ? 'Send Request to ${widget.riderName ?? "Rider"}'
+                    : 'Create Delivery Job',
                 onPressed: jobs.isLoading ? null : _createJob,
                 isLoading: jobs.isLoading,
               ),

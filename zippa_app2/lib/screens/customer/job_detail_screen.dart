@@ -263,34 +263,62 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     ),
                   const SizedBox(height: 24),
 
-                  // Rate rider button — shows only for delivered jobs
-                  if (job.status == 'delivered' && job.riderName != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: CustomButton(
-                        label: '⭐ Rate Your Rider',
-                        onPressed: () async {
-                          final rated = await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => RateRiderScreen(
-                                jobId: job.id,
-                                riderName: job.riderName!,
-                              ),
-                            ),
-                          );
-                          if (rated == true && mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Thanks for your feedback!'),
-                                backgroundColor: Colors.green,
+                  // ── Rate rider section ────────────────────────
+                  if (job.status == 'delivered' && job.riderName != null) ...[
+                    if (!job.hasRated)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: CustomButton(
+                          label: '⭐ Rate Your Rider',
+                          onPressed: () async {
+                            final rated = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => RateRiderScreen(
+                                  jobId: job.id,
+                                  riderName: job.riderName!,
+                                ),
                               ),
                             );
-                          }
-                        },
-                        color: Colors.amber.shade700,
+                            if (rated == true && mounted) {
+                              // Re-fetch so hasRated updates to true
+                              context.read<JobProvider>().fetchJobDetail(
+                                widget.jobId,
+                              );
+                            }
+                          },
+                          color: Colors.amber.shade700,
+                        ),
+                      )
+                    else
+                      // Already rated — show a confirmation card instead
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green.shade700,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'You have already rated this delivery',
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                  ],
                 ],
               ),
             ),
@@ -300,7 +328,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   String _formatDate(String dateStr) {
     try {
       final dt = DateTime.parse(dateStr).toLocal();
-      return '${dt.day}/${dt.month}/${dt.year}  ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+      return '${dt.day}/${dt.month}/${dt.year}  '
+          '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
       return dateStr;
     }

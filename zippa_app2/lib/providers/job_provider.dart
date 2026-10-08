@@ -124,4 +124,18 @@ class JobProvider extends ChangeNotifier {
   String _parseError(DioException e) {
     return 'Status: ${e.response?.statusCode} - ${e.response?.data}';
   }
+
+  // Fetch jobs assigned to the current rider
+  Future<void> fetchMyDeliveries() async {
+    _setLoading(true);
+    try {
+      final res = await ApiClient.dio.get('${AppConstants.jobList}?scope=my');
+      _jobs = (res.data as List).map((j) => DeliveryJob.fromJson(j)).toList();
+      notifyListeners();
+    } on DioException catch (e) {
+      _setError(_parseError(e));
+    } finally {
+      _setLoading(false);
+    }
+  }
 }
