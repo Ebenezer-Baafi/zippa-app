@@ -24,28 +24,27 @@ class ZippaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => RiderProvider()),
       ],
       child: MaterialApp(
-        title        : 'Zippa',
+        title: 'Zippa',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme     : ColorScheme.fromSeed(
-            seedColor     : const Color(0xFF1A1A2E),
-            primary       : const Color(0xFF1A1A2E),
-            secondary     : const Color(0xFFE94560),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF1A1A2E),
+            primary: const Color(0xFF1A1A2E),
+            secondary: const Color(0xFFE94560),
           ),
-          useMaterial3    : true,
-          fontFamily      : 'Helvetica',
-          appBarTheme     : const AppBarTheme(
-            backgroundColor : Color(0xFF1A1A2E),
-            foregroundColor : Colors.white,
-            elevation       : 0,
+          useMaterial3: true,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF1A1A2E),
+            foregroundColor: Colors.white,
+            elevation: 0,
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
-              backgroundColor : const Color(0xFFE94560),
-              foregroundColor : Colors.white,
-              minimumSize     : const Size(double.infinity, 52),
-              shape           : RoundedRectangleBorder(
-                borderRadius  : BorderRadius.circular(12),
+              backgroundColor: const Color(0xFFE94560),
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 52),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),

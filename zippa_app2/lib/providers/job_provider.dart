@@ -5,21 +5,28 @@ import 'package:zippa_app/core/constants.dart';
 import 'package:zippa_app/models/job.dart';
 
 class JobProvider extends ChangeNotifier {
-  List<DeliveryJob> _jobs      = [];
-  DeliveryJob?      _activeJob;
-  bool              _isLoading = false;
-  String?           _error;
+  List<DeliveryJob> _jobs = [];
+  DeliveryJob? _activeJob;
+  bool _isLoading = false;
+  String? _error;
   Map<String, dynamic>? _fareEstimate;
 
-  List<DeliveryJob>     get jobs         => _jobs;
-  DeliveryJob?          get activeJob    => _activeJob;
-  bool                  get isLoading    => _isLoading;
-  String?               get error        => _error;
+  List<DeliveryJob> get jobs => _jobs;
+  DeliveryJob? get activeJob => _activeJob;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
   Map<String, dynamic>? get fareEstimate => _fareEstimate;
-  Dio                   get dio          => ApiClient.dio;
+  Dio get dio => ApiClient.dio;
 
-  void _setLoading(bool val) { _isLoading = val; notifyListeners(); }
-  void _setError(String? val) { _error = val; notifyListeners(); }
+  void _setLoading(bool val) {
+    _isLoading = val;
+    notifyListeners();
+  }
+
+  void _setError(String? val) {
+    _error = val;
+    notifyListeners();
+  }
 
   // Fetch jobs
   Future<void> fetchJobs() async {
@@ -96,12 +103,15 @@ class JobProvider extends ChangeNotifier {
     _setLoading(true);
     _setError(null);
     try {
-      final res = await ApiClient.dio.post(AppConstants.fareEstimate, data: {
-        'pickup_lat'  : pickupLat,
-        'pickup_lng'  : pickupLng,
-        'dropoff_lat' : dropoffLat,
-        'dropoff_lng' : dropoffLng,
-      });
+      final res = await ApiClient.dio.post(
+        AppConstants.fareEstimate,
+        data: {
+          'pickup_lat': pickupLat,
+          'pickup_lng': pickupLng,
+          'dropoff_lat': dropoffLat,
+          'dropoff_lng': dropoffLng,
+        },
+      );
       _fareEstimate = res.data;
       notifyListeners();
     } on DioException catch (e) {
@@ -112,10 +122,6 @@ class JobProvider extends ChangeNotifier {
   }
 
   String _parseError(DioException e) {
-    if (e.response?.data is Map) {
-      final data = e.response!.data as Map;
-      if (data.containsKey('detail')) return data['detail'];
-    }
-    return 'Something went wrong. Please try again.';
+    return 'Status: ${e.response?.statusCode} - ${e.response?.data}';
   }
 }

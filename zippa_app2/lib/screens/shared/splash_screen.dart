@@ -5,6 +5,8 @@ import 'package:zippa_app/providers/auth_provider.dart';
 import 'package:zippa_app/screens/auth/login_screen.dart';
 import 'package:zippa_app/screens/customer/home_screen.dart';
 import 'package:zippa_app/screens/rider/rider_home_screen.dart';
+import 'package:zippa_app/screens/rider/rider_profile_setup_screen.dart';
+import 'package:zippa_app/providers/rider_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,19 +27,29 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     final token = await AppStorage.getAccessToken();
-    final role  = await AppStorage.getRole();
+    final role = await AppStorage.getRole();
 
     if (token == null) {
       _go(const LoginScreen());
       return;
     }
 
-    // fetch user profile
     await context.read<AuthProvider>().fetchMe();
     if (!mounted) return;
 
     if (role == 'rider') {
-      _go(const RiderHomeScreen());
+      // check if rider profile exists
+      try {
+        await context.read<RiderProvider>().fetchProfile();
+        if (!mounted) return;
+        if (context.read<RiderProvider>().profile == null) {
+          _go(const RiderProfileSetupScreen());
+        } else {
+          _go(const RiderHomeScreen());
+        }
+      } catch (_) {
+        _go(const RiderProfileSetupScreen());
+      }
     } else {
       _go(const CustomerHomeScreen());
     }
@@ -63,9 +75,9 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               'ZIPPA',
               style: TextStyle(
-                fontSize   : 36,
-                fontWeight : FontWeight.bold,
-                color      : Colors.white,
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
                 letterSpacing: 6,
               ),
             ),

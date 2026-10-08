@@ -13,12 +13,13 @@ class CreateJobScreen extends StatefulWidget {
 }
 
 class _CreateJobScreenState extends State<CreateJobScreen> {
-  final _formKey            = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _packageDescription = TextEditingController();
+  final _offeredPrice = TextEditingController();
 
-  String  _packageType    = 'document';
+  String _packageType = 'document';
   double? _estimatedFare;
-  bool    _fetchingFare   = false;
+  bool _fetchingFare = false;
 
   // Pickup
   String? _pickupAddress;
@@ -31,11 +32,16 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   double? _dropoffLng;
 
   final List<String> _packageTypes = [
-    'document', 'small', 'medium', 'large', 'fragile'
+    'document',
+    'small',
+    'medium',
+    'large',
+    'fragile',
   ];
 
   @override
   void dispose() {
+    _offeredPrice.dispose();
     _packageDescription.dispose();
     super.dispose();
   }
@@ -44,7 +50,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     if (_pickupLat == null || _dropoffLat == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content        : Text('Please select both pickup and dropoff addresses'),
+          content: Text('Please select both pickup and dropoff addresses'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -53,15 +59,15 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     setState(() => _fetchingFare = true);
     final jobs = context.read<JobProvider>();
     await jobs.estimateFare(
-      pickupLat : _pickupLat!,
-      pickupLng : _pickupLng!,
-      dropoffLat: _dropoffLat!,
-      dropoffLng: _dropoffLng!,
+      pickupLat: double.parse(_pickupLat!.toStringAsFixed(6)),
+      pickupLng: double.parse(_pickupLng!.toStringAsFixed(6)),
+      dropoffLat: double.parse(_dropoffLat!.toStringAsFixed(6)),
+      dropoffLng: double.parse(_dropoffLng!.toStringAsFixed(6)),
     );
     if (mounted && jobs.fareEstimate != null) {
       setState(() {
-        _estimatedFare =
-            (jobs.fareEstimate!['estimated_fare'] as num).toDouble();
+        _estimatedFare = (jobs.fareEstimate!['estimated_fare'] as num)
+            .toDouble();
       });
     }
     setState(() => _fetchingFare = false);
@@ -72,38 +78,45 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     if (_pickupLat == null || _dropoffLat == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content        : Text('Please select pickup and dropoff addresses'),
+          content: Text('Please select pickup and dropoff addresses'),
           backgroundColor: Colors.orange,
         ),
       );
       return;
     }
-    if (_estimatedFare == null) {
+
+    // use offered price if entered, otherwise use estimated fare
+    final fare = _offeredPrice.text.isNotEmpty
+        ? double.tryParse(_offeredPrice.text)
+        : _estimatedFare;
+
+    if (fare == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content        : Text('Please estimate fare before creating job'),
+          content: Text('Please estimate fare or enter your offered price'),
           backgroundColor: Colors.orange,
         ),
       );
       return;
     }
+
     final jobs = context.read<JobProvider>();
-    final ok   = await jobs.createJob({
-      'package_type'       : _packageType,
+    final ok = await jobs.createJob({
+      'package_type': _packageType,
       'package_description': _packageDescription.text,
-      'pickup_address'     : _pickupAddress,
-      'pickup_lat'         : _pickupLat,
-      'pickup_lng'         : _pickupLng,
-      'dropoff_address'    : _dropoffAddress,
-      'dropoff_lat'        : _dropoffLat,
-      'dropoff_lng'        : _dropoffLng,
-      'estimated_fare'     : _estimatedFare,
+      'pickup_address': _pickupAddress,
+      'pickup_lat': double.parse(_pickupLat!.toStringAsFixed(6)),
+      'pickup_lng': double.parse(_pickupLng!.toStringAsFixed(6)),
+      'dropoff_address': _dropoffAddress,
+      'dropoff_lat': double.parse(_dropoffLat!.toStringAsFixed(6)),
+      'dropoff_lng': double.parse(_dropoffLng!.toStringAsFixed(6)),
+      'estimated_fare': fare,
     });
     if (!mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content        : Text('Delivery job created successfully!'),
+          content: Text('Delivery job created successfully!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -111,7 +124,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content        : Text(jobs.error ?? 'Failed to create job'),
+          content: Text(jobs.error ?? 'Failed to create job'),
           backgroundColor: Colors.red,
         ),
       );
@@ -124,49 +137,58 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(title: const Text('New Delivery')),
-      body  : SingleChildScrollView(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child  : Form(
-          key  : _formKey,
+        child: Form(
+          key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Package type selector
-              const Text('Package Type',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color     : Color(0xFF1A1A2E))),
+              const Text(
+                'Package Type',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
               const SizedBox(height: 10),
               SizedBox(
                 height: 40,
-                child : ListView.separated(
-                  scrollDirection : Axis.horizontal,
-                  itemCount       : _packageTypes.length,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _packageTypes.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder     : (_, i) {
-                    final type     = _packageTypes[i];
+                  itemBuilder: (_, i) {
+                    final type = _packageTypes[i];
                     final selected = type == _packageType;
                     return GestureDetector(
-                      onTap : () => setState(() => _packageType = type),
-                      child : Container(
-                        padding   : const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
+                      onTap: () => setState(() => _packageType = type),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
-                          color       : selected
-                              ? const Color(0xFFE94560) : Colors.white,
+                          color: selected
+                              ? const Color(0xFFE94560)
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(20),
-                          border      : Border.all(
+                          border: Border.all(
                             color: selected
                                 ? const Color(0xFFE94560)
                                 : Colors.grey.shade300,
                           ),
                         ),
-                        child: Text(type,
-                            style: TextStyle(
-                              color     : selected
-                                  ? Colors.white : Colors.grey.shade700,
-                              fontWeight: FontWeight.w500,
-                            )),
+                        child: Text(
+                          type,
+                          style: TextStyle(
+                            color: selected
+                                ? Colors.white
+                                : Colors.grey.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
                     );
                   },
@@ -176,130 +198,230 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
 
               // Pickup
               _SectionHeader(
-                  title: 'Pickup Location',
-                  color: const Color(0xFFE94560)),
+                title: 'Pickup Location',
+                color: const Color(0xFFE94560),
+              ),
               const SizedBox(height: 10),
               AddressSearchField(
-                label    : 'Search pickup address',
-                icon     : Icons.circle,
+                label: 'Search pickup address',
+                icon: Icons.circle,
                 iconColor: const Color(0xFFE94560),
                 onSelected: (address, lat, lng) {
                   setState(() {
                     _pickupAddress = address;
-                    _pickupLat     = lat;
-                    _pickupLng     = lng;
+                    _pickupLat = lat;
+                    _pickupLng = lng;
                   });
                 },
               ),
               if (_pickupAddress != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child  : Row(children: [
-                    const Icon(Icons.check_circle,
-                        color: Colors.green, size: 14),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(_pickupAddress!,
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _pickupAddress!,
                           style: const TextStyle(
-                              color: Colors.green, fontSize: 12),
+                            color: Colors.green,
+                            fontSize: 12,
+                          ),
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
-                    ),
-                  ]),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               const SizedBox(height: 20),
 
               // Dropoff
               _SectionHeader(
-                  title: 'Dropoff Location',
-                  color: const Color(0xFF1A1A2E)),
+                title: 'Dropoff Location',
+                color: const Color(0xFF1A1A2E),
+              ),
               const SizedBox(height: 10),
               AddressSearchField(
-                label    : 'Search dropoff address',
-                icon     : Icons.location_on,
+                label: 'Search dropoff address',
+                icon: Icons.location_on,
                 iconColor: const Color(0xFF1A1A2E),
                 onSelected: (address, lat, lng) {
                   setState(() {
                     _dropoffAddress = address;
-                    _dropoffLat     = lat;
-                    _dropoffLng     = lng;
+                    _dropoffLat = lat;
+                    _dropoffLng = lng;
                   });
                 },
               ),
               if (_dropoffAddress != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child  : Row(children: [
-                    const Icon(Icons.check_circle,
-                        color: Colors.green, size: 14),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(_dropoffAddress!,
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _dropoffAddress!,
                           style: const TextStyle(
-                              color: Colors.green, fontSize: 12),
+                            color: Colors.green,
+                            fontSize: 12,
+                          ),
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
-                    ),
-                  ]),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               const SizedBox(height: 20),
 
               // Package description
               CustomTextField(
-                label     : 'Package Description (optional)',
+                label: 'Package Description (optional)',
                 controller: _packageDescription,
                 prefixIcon: Icons.description_outlined,
               ),
               const SizedBox(height: 20),
 
+              // Offered price section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Your Offered Price',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A2E),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Set the price you\'re willing to pay. Riders can negotiate.',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _offeredPrice,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: '0.00',
+                        prefixText: 'GHS ',
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE94560),
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_estimatedFare != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Suggested fare: GHS ${_estimatedFare!.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
               // Fare estimate display
               if (_estimatedFare != null)
                 Container(
-                  width     : double.infinity,
-                  padding   : const EdgeInsets.all(16),
-                  margin    : const EdgeInsets.only(bottom: 12),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color       : const Color(0xFF1A1A2E),
+                    color: const Color(0xFF1A1A2E),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Column(children: [
-                    const Text('Estimated Fare',
-                        style: TextStyle(color: Colors.white60, fontSize: 13)),
-                    const SizedBox(height: 4),
-                    Text('GHS ${_estimatedFare!.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                            color     : Color(0xFFE94560),
-                            fontSize  : 28,
-                            fontWeight: FontWeight.bold)),
-                    if (jobs.fareEstimate != null) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.route, color: Colors.white54, size: 14),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${jobs.fareEstimate!['distance_km']} km  •  '
-                                '${jobs.fareEstimate!['duration_min']} mins',
-                            style: const TextStyle(
-                                color: Colors.white54, fontSize: 12),
-                          ),
-                        ],
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Estimated Fare',
+                        style: TextStyle(color: Colors.white60, fontSize: 13),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'GHS ${_estimatedFare!.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          color: Color(0xFFE94560),
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (jobs.fareEstimate != null) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.route,
+                              color: Colors.white54,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${jobs.fareEstimate!['distance_km']} km  •  '
+                              '${jobs.fareEstimate!['duration_min']} mins',
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
-                  ]),
+                  ),
                 ),
 
               CustomButton(
-                label    : 'Estimate Fare',
-                onPressed: _estimateFare,
+                label: 'Estimate Fare',
+                onPressed: _fetchingFare ? null : _estimateFare,
                 isLoading: _fetchingFare,
-                color    : const Color(0xFF1A1A2E),
+                color: const Color(0xFF1A1A2E),
               ),
               const SizedBox(height: 12),
               CustomButton(
-                label    : 'Create Delivery Job',
-                onPressed: _createJob,
+                label: 'Create Delivery Job',
+                onPressed: jobs.isLoading ? null : _createJob,
                 isLoading: jobs.isLoading,
               ),
               const SizedBox(height: 24),
@@ -313,24 +435,31 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  final Color  color;
+  final Color color;
   const _SectionHeader({required this.title, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      Container(
-        width     : 4, height: 18,
-        decoration: BoxDecoration(
-            color       : color,
-            borderRadius: BorderRadius.circular(2)),
-      ),
-      const SizedBox(width: 8),
-      Text(title,
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 18,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
           style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color     : color,
-              fontSize  : 15)),
-    ]);
+            fontWeight: FontWeight.bold,
+            color: color,
+            fontSize: 15,
+          ),
+        ),
+      ],
+    );
   }
 }

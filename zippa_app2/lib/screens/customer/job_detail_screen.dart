@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:zippa_app/providers/job_provider.dart';
 import 'package:zippa_app/widget/common/custom_button.dart';
+import 'package:zippa_app/screens/customer/rate_rider_screen.dart';
+import 'package:zippa_app/screens/shared/negotiations_screen.dart';
+import 'package:zippa_app/providers/auth_provider.dart';
 
 class JobDetailScreen extends StatefulWidget {
   final String jobId;
@@ -230,6 +233,27 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                   ),
                   const SizedBox(height: 24),
 
+                  // Negotiate button — only for pending jobs
+                  if (job.status == 'pending')
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: CustomButton(
+                        label: '🤝 Negotiate Fare',
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => NegotiationsScreen(
+                              jobId: job.id,
+                              userRole:
+                                  context.read<AuthProvider>().user?.role ??
+                                  'customer',
+                            ),
+                          ),
+                        ),
+                        color: Colors.orange.shade700,
+                      ),
+                    ),
+
                   // Cancel button
                   if (job.status == 'pending')
                     CustomButton(
@@ -238,6 +262,35 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                       color: Colors.red,
                     ),
                   const SizedBox(height: 24),
+
+                  // Rate rider button — shows only for delivered jobs
+                  if (job.status == 'delivered' && job.riderName != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: CustomButton(
+                        label: '⭐ Rate Your Rider',
+                        onPressed: () async {
+                          final rated = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => RateRiderScreen(
+                                jobId: job.id,
+                                riderName: job.riderName!,
+                              ),
+                            ),
+                          );
+                          if (rated == true && mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Thanks for your feedback!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        },
+                        color: Colors.amber.shade700,
+                      ),
+                    ),
                 ],
               ),
             ),
